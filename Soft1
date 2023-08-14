@@ -1,5 +1,9 @@
+pip install Flask
+from flask import Flask, request, jsonify
 import getpass
 from cryptography.fernet import Fernet
+
+app = Flask(__name__)
 
 # Generate a key for encryption - this should be kept secret and secure
 key = Fernet.generate_key()
@@ -19,23 +23,18 @@ def retrieve_password(site):
     else:
         return "Password not found for this site."
 
-def main():
-    while True:
-        action = input("Would you like to store or retrieve a password? (store/retrieve/exit): ")
-        if action == "store":
-            site = input("Enter the site name: ")
-            password = getpass.getpass("Enter the password (input will be hidden): ")
-            store_password(site, password)
-            print("Password stored successfully.")
-        elif action == "retrieve":
-            site = input("Enter the site name: ")
-            password = retrieve_password(site)
-            print(f"Password for {site}: {password}")
-        elif action == "exit":
-            break
-        else:
-            print("Invalid action. Please try again.")
+@app.route('/store', methods=['POST'])
+def api_store_password():
+    site = request.json['site']
+    password = request.json['password']
+    store_password(site, password)
+    return jsonify(success=True, message="Password stored successfully.")
+
+@app.route('/retrieve', methods=['GET'])
+def api_retrieve_password():
+    site = request.args.get('site')
+    password = retrieve_password(site)
+    return jsonify(site=site, password=password)
 
 if __name__ == "__main__":
-    main()
-pip install cryptography
+    app.run(debug=True)
